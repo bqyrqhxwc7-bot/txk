@@ -1,11 +1,12 @@
 #!/bin/bash
 
-# 桶管理系统一键部署脚本
+# 桶管理系统一键部署脚本（真正的一键部署版本）
 # 适用于Ubuntu 20.04 LTS及以上版本
+# 自动克隆GitHub仓库，无需手动上传代码
 
 set -e
 
-echo "🚀 开始部署桶管理系统..."
+echo "🚀 开始真正的一键部署桶管理系统..."
 
 # 检查root权限
 if [ "$EUID" -ne 0 ]; then
@@ -13,33 +14,37 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# 更新系统
-echo "🔄 更新系统..."
-apt update && apt upgrade -y
+# 获取当前目录（用于后续操作）
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 安装必要软件
+# 安装基础工具
+echo "🔧 安装基础工具..."
+apt update && apt upgrade -y
+apt install -y git curl wget sudo
+
+# 安装Node.js 18 LTS
 echo "📦 安装Node.js..."
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 apt install -y nodejs
 
-# 安装MongoDB（修复apt-key弃用问题）
-echo "📦 安装MongoDB..."
+# 安装MongoDB 6.0（修复apt-key弃用问题）
+echo "💾 安装MongoDB..."
 # 创建密钥环目录
 mkdir -p /etc/apt/keyrings
 
 # 下载并安装GPG密钥（新方法）
 curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | \
-  sudo gpg --dearmor -o /etc/apt/keyrings/mongodb-server-6.0.gpg
+   sudo gpg --dearmor -o /etc/apt/keyrings/mongodb-server-6.0.gpg
 
 # 添加MongoDB仓库源
 echo "deb [ arch=amd64, signed-by=/etc/apt/keyrings/mongodb-server-6.0.gpg ] https://repo.mongodb.org/apt/ubuntu $(lsb_release -cs)/mongodb-org/6.0 multiverse" | \
-  sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+   sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
 
 # 更新包列表并安装MongoDB
 apt update
 apt install -y mongodb-org
 
-# 启动MongoDB
+# 启动MongoDB服务
 echo "🔧 启动MongoDB..."
 systemctl start mongod
 systemctl enable mongod
@@ -50,25 +55,44 @@ APP_DIR="/var/www/barrel-management"
 mkdir -p $APP_DIR
 cd $APP_DIR
 
-# 这里需要手动上传应用代码
-echo "📋 请手动上传应用代码到 $APP_DIR"
-echo "可以使用以下命令："
-echo "scp -r ./ root@your-server-ip:$APP_DIR/"
-
-# 等待用户确认代码已上传
-read -p "确认代码已上传完成？(y/N): " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "请先上传代码再继续"
-    exit 1
-fi
+# 自动克隆GitHub仓库（使用您提供的地址）
+echo "📥 自动克隆GitHub项目..."
+git clone https://github.com/bqyrqhxwc7-bot/txk.git .
+echo "✅ 项目代码已自动克隆完成"
 
 # 安装应用依赖
-echo "📥 安装应用依赖..."
+echo "🧩 安装依赖..."
 npm install --production
 
+# 创建环境变量配置文件
+echo "⚙️ 创建环境配置..."
+cat > .env << EOF
+# 应用配置
+PORT=3000
+NODE_ENV=production
+
+# 数据库配置
+MONGODB_URI=mongodb://localhost:27017/barrelManagement
+
+# 安全配置
+CORS_ORIGINS=http://$(hostname -I | awk '{print $1}'),https://$(hostname -I | awk '{print $1}')
+
+# 二维码配置
+QR_CODE_SIZE=256
+QR_CODE_ERROR_CORRECTION=L
+QR_CODE_MARGIN=4
+
+# 日志配置
+LOG_LEVEL=info
+LOG_FORMAT=json
+
+# 服务器信息
+SERVER_HOST=$(hostname -I | awk '{print $1}')
+SERVER_PORT=3000
+EOF
+
 # 创建systemd服务文件
-echo "⚙️ 创建系统服务..."
+echo "🚀 创建系统服务..."
 cat > /etc/systemd/system/barrel-management.service << EOF
 [Unit]
 Description=Barrel Management System
@@ -83,18 +107,19 @@ Restart=always
 Environment=NODE_ENV=production
 Environment=PORT=3000
 Environment=MONGODB_URI=mongodb://localhost:27017/barrelManagement
+Environment=SERVER_HOST=$(hostname -I | awk '{print $1}')
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
 # 启动服务
-echo "🚀 启动应用服务..."
+echo "⚙️ 启动应用服务..."
 systemctl daemon-reload
 systemctl start barrel-management
 systemctl enable barrel-management
 
-# 配置Nginx
+# 配置Nginx反向代理
 echo "🌐 配置Nginx..."
 apt install -y nginx
 
@@ -103,6 +128,32 @@ server {
     listen 80;
     server_name _;
 
+    # 静态文件缓存
+    location /static {
+        alias $APP_DIR/public;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # API代理
+    location /api {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+        
+        # 超时设置
+        proxy_connect_timeout 5s;
+        proxy_send_timeout 10s;
+        proxy_read_timeout 10s;
+    }
+
+    # 前端路由
     location / {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
@@ -114,12 +165,18 @@ server {
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_cache_bypass \$http_upgrade;
     }
+
+    # 错误页面
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
 }
 EOF
 
+# 启用Nginx站点
 ln -sf /etc/nginx/sites-available/barrel-management /etc/nginx/sites-enabled/
-nginx -t
-systemctl restart nginx
+nginx -t && systemctl restart nginx
 
 # 防火墙配置
 echo "🛡️ 配置防火墙..."
@@ -128,7 +185,14 @@ ufw allow 80
 ufw allow 443
 ufw --force enable
 
-echo "✅ 部署完成！"
-echo "应用查看地址: http://$(hostname -I | awk '{print $1}')"
+# 创建部署完成提示文件
+echo "🎉 部署完成！" > /var/www/barrel-management/DEPLOYMENT_COMPLETE.txt
+echo "应用查看地址: http://$(hostname -I | awk '{print $1}')" >> /var/www/barrel-management/DEPLOYMENT_COMPLETE.txt
+echo "服务状态: systemctl status barrel-management" >> /var/www/barrel-management/DEPLOYMENT_COMPLETE.txt
+echo "日志查看: journalctl -u barrel-management -f" >> /var/www/barrel-management/DEPLOYMENT_COMPLETE.txt
+
+echo "✅ 真正的一键部署已完成！"
+echo "访问地址: http://$(hostname -I | awk '{print $1}')"
 echo "服务状态: systemctl status barrel-management"
 echo "日志查看: journalctl -u barrel-management -f"
+echo "部署完成文件: /var/www/barrel-management/DEPLOYMENT_COMPLETE.txt"
