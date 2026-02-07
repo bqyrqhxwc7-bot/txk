@@ -49,13 +49,22 @@ echo "🔧 启动MongoDB..."
 systemctl start mongod
 systemctl enable mongod
 
-# 创建应用目录
+# 创建应用目录并处理已存在目录的情况
 echo "📁 创建应用目录..."
 APP_DIR="/var/www/barrel-management"
 mkdir -p $APP_DIR
 cd $APP_DIR
 
-# 自动克隆GitHub仓库（使用您提供的地址）
+# 检查目录是否为空，如果非空则清理
+if [ "$(ls -A $APP_DIR)" ]; then
+    echo "⚠️  目录 '$APP_DIR' 已存在且非空，正在清理..."
+    # 删除除隐藏文件外的所有内容（保留.gitignore等配置文件）
+    find $APP_DIR -maxdepth 1 ! -name ".gitignore" ! -name ".env" ! -name ".dockerignore" -type f -delete
+    find $APP_DIR -maxdepth 1 ! -name ".git" ! -name ".gitignore" ! -name ".env" ! -name ".dockerignore" -type d -exec rm -rf {} \;
+    echo "✅ 目录清理完成"
+fi
+
+# 自动克隆GitHub仓库（使用标准URL格式）
 echo "📥 自动克隆GitHub项目..."
 git clone https://github.com/bqyrqhxwc7-bot/txk.git .
 echo "✅ 项目代码已自动克隆完成"
