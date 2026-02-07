@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 桶管理系统一键部署脚本
-# 适用于Ubuntu 20.04 LTS
+# 适用于Ubuntu 20.04 LTS及以上版本
 
 set -e
 
@@ -22,9 +22,20 @@ echo "📦 安装Node.js..."
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 apt install -y nodejs
 
+# 安装MongoDB（修复apt-key弃用问题）
 echo "📦 安装MongoDB..."
-wget -qO - https://www.mongodb.org/static/pgp/server_6.0.asc | sudo apt-key add -
-echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+# 创建密钥环目录
+mkdir -p /etc/apt/keyrings
+
+# 下载并安装GPG密钥（新方法）
+curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | \
+  sudo gpg --dearmor -o /etc/apt/keyrings/mongodb-server-6.0.gpg
+
+# 添加MongoDB仓库源
+echo "deb [ arch=amd64, signed-by=/etc/apt/keyrings/mongodb-server-6.0.gpg ] https://repo.mongodb.org/apt/ubuntu $(lsb_release -cs)/mongodb-org/6.0 multiverse" | \
+  sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+
+# 更新包列表并安装MongoDB
 apt update
 apt install -y mongodb-org
 
