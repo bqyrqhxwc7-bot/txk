@@ -2,7 +2,8 @@
 
 # 桶管理系统一键部署脚本（真正的一键部署版本）
 # 适用于Ubuntu 20.04 LTS及以上版本
-# 自动克隆GitHub仓库，无需手动上传代码
+# 自动克隆GitHub仓库
+# 已修复sharp编译依赖问题
 
 set -e
 
@@ -69,8 +70,25 @@ echo "📥 自动克隆GitHub项目..."
 git clone https://github.com/bqyrqhxwc7-bot/txk.git .
 echo "✅ 项目代码已自动克隆完成"
 
+# 安装sharp库所需的系统依赖
+echo "🛠️ 安装sharp库系统依赖..."
+apt install -y \
+    libvips-dev \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libgif-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    libwebp-dev \
+    libxml2-dev \
+    libglib2.0-dev \
+    libgobject-2.0-dev
+
 # 安装应用依赖
 echo "🧩 安装依赖..."
+# 设置环境变量避免sharp编译问题
+export SHARP_IGNORE_GLOBAL_LIBVIPS=1
 npm install --production
 
 # 创建环境变量配置文件
