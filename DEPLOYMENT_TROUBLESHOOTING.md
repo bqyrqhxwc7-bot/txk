@@ -2,9 +2,54 @@
 
 本文档提供了桶管理系统部署过程中常见问题的详细解决方案。
 
-## 🔧 依赖相关问题
+## 🔧 前端显示问题
 
-### 问题1: 缺少canvas模块
+### 问题1: 浏览器显示黑屏/空白页
+```
+访问 http://服务器IP:3000 显示黑屏
+```
+
+**原因**: 
+- 静态文件服务配置错误
+- 前端文件缺失或路径不正确
+- CORS策略阻止资源加载
+- 浏览器缓存问题
+
+**解决方案**:
+
+#### 方法一: 检查静态文件配置（推荐）
+```bash
+# 1. 检查server.js中的静态文件配置
+cat server.js | grep "express.static"
+
+# 2. 确保使用绝对路径
+# 修改为：
+# const path = require('path');
+# const __dirname = path.dirname(require.main.filename);
+# app.use(express.static(path.join(__dirname, '.')));
+```
+
+#### 方法二: 手动验证前端文件
+```bash
+# 检查关键文件是否存在
+ls -la index.html style.css script.js
+
+# 测试本地访问
+curl -I http://localhost:3000/index.html
+curl -I http://localhost:3000/style.css
+curl -I http://localhost:3000/script.js
+
+# 如果返回404，说明静态文件服务配置有问题
+```
+
+#### 方法三: 使用浏览器开发者工具诊断
+1. 打开浏览器开发者工具 (F12)
+2. 切换到 **Network** 标签
+3. 刷新页面
+4. 查看哪些文件返回404错误
+5. 根据404的文件路径调整静态文件配置
+
+### 问题2: 缺少canvas模块
 ```
 Error: Cannot find module 'canvas'
 ```
@@ -110,6 +155,11 @@ curl http://localhost:3000/health
 
 # 验证MongoDB连接
 systemctl status mongod
+
+# 检查静态文件是否可访问
+curl -I http://localhost:3000/index.html
+curl -I http://localhost:3000/style.css
+curl -I http://localhost:3000/script.js
 ```
 
 ### 常见启动失败原因

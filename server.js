@@ -13,7 +13,11 @@ const PORT = process.env.PORT || 3000;
 // 中间件配置
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static('.')); // 提供静态文件服务
+
+// 修复静态文件服务配置 - 使用绝对路径确保正确加载
+const path = require('path');
+const __dirname = path.dirname(require.main.filename);
+app.use(express.static(path.join(__dirname, '.'))); // 使用绝对路径
 
 // MongoDB连接配置
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/barrelManagement';
