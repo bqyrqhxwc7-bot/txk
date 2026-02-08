@@ -101,8 +101,98 @@ cd "$APP_DIR"
 
 # 自动克隆GitHub仓库（使用标准URL格式）
 echo "📥 自动克隆GitHub项目..."
-git clone https://github.com/bqyrqhxwc7-bot/txk.git .
-echo "✅ 项目代码已自动克隆完成"
+
+# 设置Git配置以提高克隆成功率
+git config --global http.postBuffer 524288000
+git config --global http.lowSpeedLimit 0
+git config --global http.lowSpeedTime 999999
+git config --global core.compression 0
+
+# 尝试多次克隆，增加重试机制
+MAX_RETRIES=3
+RETRY_COUNT=0
+
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    echo "🔄 尝试第 $((RETRY_COUNT + 1)) 次克隆..."
+    
+    if git clone https://github.com/bqyrqhxwc7-bot/txk.git . 2>/dev/null; then
+        echo "✅ 项目代码克隆成功"
+        break
+    else
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+            echo "⚠️  克隆失败，${RETRY_COUNT}秒后重试..."
+            sleep $RETRY_COUNT
+        else
+            echo "❌ 多次尝试克隆失败"
+            
+            # 提供手动下载选项
+            echo "💡 尝试备用方案：手动下载项目文件"
+            
+            # 创建基本项目结构
+            mkdir -p public
+            cat > server.js << 'EOF'
+const express = require('express');
+const mongoose = require('mongoose');
+const path = require('path');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// 中间件
+app.use(express.json());
+app.use(express.static('public'));
+
+// MongoDB连接
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/barrelManagement', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+});
+
+// 基础路由
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/health', (req, res) => {
+    res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+});
+EOF
+
+            cat > package.json << 'EOF'
+{
+  "name": "barrel-management",
+  "version": "1.0.0",
+  "description": "现代化桶管理系统",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.3",
+    "mongoose": "^6.12.4",
+    "dotenv": "^16.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  },
+  "engines": {
+    "node": ">=14.17.0"
+  }
+}
+EOF
+
+            echo "✅ 已创建基础项目文件，您可以手动添加前端文件"
+            break
+        fi
+    fi
+done
 
 # 安装sharp库所需的系统依赖（修正包名问题）
 echo "🛠️ 安装sharp库系统依赖..."

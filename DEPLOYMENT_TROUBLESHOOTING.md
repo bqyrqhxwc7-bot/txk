@@ -2,6 +2,81 @@
 
 本文档提供了桶管理系统部署过程中常见问题的详细解决方案。
 
+## 🔧 Git克隆相关问题
+
+### 问题1: HTTP2 framing layer错误
+```
+error: RPC failed; curl 16 Error in the HTTP2 framing layer
+fatal: error reading section header 'shallow-info'
+```
+
+**原因**: 网络不稳定或GitHub服务器HTTP/2协议兼容性问题
+
+**解决方案**:
+
+#### 方法一: 使用修复脚本（推荐）
+```bash
+curl -O https://raw.githubusercontent.com/bqyrqhxwc7-bot/txk/main/git-clone-fix.sh
+chmod +x git-clone-fix.sh
+sudo ./git-clone-fix.sh
+```
+
+#### 方法二: 手动优化Git配置
+```bash
+# 以root身份执行
+sudo su
+
+cd /var/www/barrel-management
+
+# 优化Git配置
+git config --global http.postBuffer 524288000
+git config --global http.lowSpeedLimit 0
+git config --global http.lowSpeedTime 999999
+git config --global http.version HTTP/1.1
+git config --global core.compression 0
+
+# 尝试克隆
+git clone https://github.com/bqyrqhxwc7-bot/txk.git .
+```
+
+#### 方法三: 使用备用下载方式
+```bash
+# 使用wget下载zip包
+cd /var/www/barrel-management
+wget https://github.com/bqyrqhxwc7-bot/txk/archive/main.zip
+unzip main.zip
+mv txk-main/* ./
+mv txk-main/.[^.]* ./ 2>/dev/null || true
+rm -rf txk-main main.zip
+
+# 或使用curl下载tar.gz
+cd /var/www/barrel-management
+curl -L https://github.com/bqyrqhxwc7-bot/txk/archive/main.tar.gz -o main.tar.gz
+tar -xzf main.tar.gz
+mv txk-main/* ./
+mv txk-main/.[^.]* ./ 2>/dev/null || true
+rm -rf txk-main main.tar.gz
+```
+
+### 问题2: 网络超时错误
+```
+fatal: unable to access 'https://github.com/...': Failed to connect to github.com port 443
+```
+
+**解决方案**:
+```bash
+# 检查网络连接
+ping github.com
+traceroute github.com
+
+# 配置代理（如果需要）
+git config --global http.proxy http://proxy.server:port
+git config --global https.proxy https://proxy.server:port
+
+# 或使用SSH方式克隆（需要配置SSH密钥）
+git clone git@github.com:bqyrqhxwc7-bot/txk.git .
+```
+
 ## 🔧 目录相关问题
 
 ### 问题1: `find` 命令报错

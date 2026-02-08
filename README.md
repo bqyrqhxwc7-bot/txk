@@ -474,7 +474,18 @@ a.download = `${barrelId}QR.png`; // 符合命名规范
 
 #### 常见部署问题
 
-1. **目录清理错误**
+1. **Git克隆失败**
+   ```
+   error: RPC failed; curl 16 Error in the HTTP2 framing layer
+   ```
+   **解决方案**: 
+   ```bash
+   curl -O https://raw.githubusercontent.com/bqyrqhxwc7-bot/txk/main/git-clone-fix.sh
+   chmod +x git-clone-fix.sh
+   sudo ./git-clone-fix.sh
+   ```
+
+2. **目录清理错误**
    ```
    find: '/var/www/barrel-management': No such file or directory
    ```
@@ -485,7 +496,7 @@ a.download = `${barrelId}QR.png`; // 符合命名规范
    sudo ./fix-deployment.sh
    ```
 
-2. **Node.js版本问题**
+3. **Node.js版本问题**
    ```bash
    Error: The module 'sharp' was compiled against a different Node.js version
    ```
@@ -493,7 +504,7 @@ a.download = `${barrelId}QR.png`; // 符合命名规范
    - 升级到Node.js 18 LTS
    - 重新安装依赖: `npm install --force`
 
-3. **MongoDB连接失败**
+4. **MongoDB连接失败**
    ```
    MongoServerSelectionError: connect ECONNREFUSED
    ```
@@ -503,7 +514,7 @@ a.download = `${barrelId}QR.png`; // 符合命名规范
    sudo systemctl restart mongod
    ```
 
-4. **权限问题**
+5. **权限问题**
    ```
    EACCES: permission denied
    ```

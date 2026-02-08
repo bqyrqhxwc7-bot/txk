@@ -9,6 +9,7 @@ barrel-management/
 ├── package.json           # Node.js依赖配置
 ├── deploy.sh              # 一键部署脚本
 ├── fix-deployment.sh      # 部署问题修复脚本
+├── git-clone-fix.sh       # Git克隆问题修复脚本
 ├── start-dev.sh           # 开发环境启动脚本
 ├── nginx.conf             # Nginx配置文件
 ├── docker-compose.yml     # Docker编排文件
@@ -18,6 +19,7 @@ barrel-management/
 ├── README.md             # 项目说明文档
 ├── DEPLOYMENT.md         # 部署详细说明
 ├── DEPLOYMENT_TROUBLESHOOTING.md  # 部署故障排除指南
+├── GIT_TROUBLESHOOTING.md # Git问题专项解决指南
 └── PROJECT_STRUCTURE.md   # 项目结构说明
 ```
 
@@ -39,6 +41,7 @@ barrel-management/
 ### 部署相关
 - **deploy.sh**: 🔧 一键部署脚本，自动化完成整个部署流程
 - **fix-deployment.sh**: 🛠️ 部署问题修复脚本，解决目录和权限问题
+- **git-clone-fix.sh**: 🔄 Git克隆问题专用修复脚本
 - **start-dev.sh**: 🚀 开发环境快速启动脚本
 - **deploy-config.js**: ⚙️ 部署配置参数文件
 
@@ -46,6 +49,7 @@ barrel-management/
 - **README.md**: 📖 项目主文档，包含快速开始和基本使用说明
 - **DEPLOYMENT.md**: 📋 详细的部署指南和技术说明
 - **DEPLOYMENT_TROUBLESHOOTING.md**: 🔧 部署问题诊断和解决方案
+- **GIT_TROUBLESHOOTING.md**: 🔄 Git相关问题专项解决指南
 - **PROJECT_STRUCTURE.md**: 📁 当前文件（项目结构说明）
 
 ## 🎯 关键特性
@@ -54,6 +58,7 @@ barrel-management/
 - 一键完成系统更新、依赖安装、服务配置
 - 自动处理目录清理和权限设置
 - 智能错误检测和恢复机制
+- **增强的Git克隆重试机制**
 
 ### 🛡️ 安全防护
 - 环境变量隔离敏感配置
@@ -82,7 +87,12 @@ sudo ./deploy.sh
 # 开发环境启动
 ./start-dev.sh
 
-# 遇到问题时使用修复脚本
+# 遇到Git问题时使用修复脚本
+curl -O https://raw.githubusercontent.com/bqyrqhxwc7-bot/txk/main/git-clone-fix.sh
+chmod +x git-clone-fix.sh
+sudo ./git-clone-fix.sh
+
+# 遇到目录问题时使用修复脚本
 curl -O https://raw.githubusercontent.com/bqyrqhxwc7-bot/txk/main/fix-deployment.sh
 chmod +x fix-deployment.sh
 sudo ./fix-deployment.sh
@@ -111,4 +121,6 @@ sudo systemctl restart barrel-management
 ```
 
 ### 故障排查
-参考 `DEPLOYMENT_TROUBLESHOOTING.md` 文档获取详细的故障排除指南。
+- **一般部署问题**: 参考 `DEPLOYMENT_TROUBLESHOOTING.md`
+- **Git相关问题**: 参考 `GIT_TROUBLESHOOTING.md`
+- **详细技术说明**: 参考 `DEPLOYMENT.md`
