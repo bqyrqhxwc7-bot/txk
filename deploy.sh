@@ -113,7 +113,7 @@ git config --global core.compression 0
 MAX_RETRIES=10
 RETRY_COUNT=0
 INITIAL_WAIT=3
-MAX_WAIT=30
+MAX_WAIT=60
 
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     echo "🔄 尝试第 $((RETRY_COUNT + 1)) 次克隆..."
