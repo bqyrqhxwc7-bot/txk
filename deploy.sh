@@ -99,18 +99,21 @@ fi
 
 cd "$APP_DIR"
 
-# 自动克隆GitHub仓库（使用标准URL格式）
+# 自动克隆GitHub项目（使用标准URL格式）
 echo "📥 自动克隆GitHub项目..."
 
 # 设置Git配置以提高克隆成功率
 git config --global http.postBuffer 524288000
 git config --global http.lowSpeedLimit 0
 git config --global http.lowSpeedTime 999999
+git config --global http.version HTTP/1.1
 git config --global core.compression 0
 
-# 尝试多次克隆，增加重试机制
-MAX_RETRIES=3
+# 增强的克隆重试机制
+MAX_RETRIES=10
 RETRY_COUNT=0
+INITIAL_WAIT=3
+MAX_WAIT=30
 
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     echo "🔄 尝试第 $((RETRY_COUNT + 1)) 次克隆..."
@@ -121,28 +124,73 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     else
         RETRY_COUNT=$((RETRY_COUNT + 1))
         if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-            echo "⚠️  克隆失败，${RETRY_COUNT}秒后重试..."
-            sleep $RETRY_COUNT
+            # 动态增加等待时间（指数退避）
+            WAIT_TIME=$((INITIAL_WAIT * (2 ** (RETRY_COUNT - 1))))
+            if [ $WAIT_TIME -gt $MAX_WAIT ]; then
+                WAIT_TIME=$MAX_WAIT
+            fi
+            echo "⚠️  克隆失败，${WAIT_TIME}秒后重试..."
+            sleep $WAIT_TIME
         else
-            echo "❌ 多次尝试克隆失败"
+            echo "❌ 多次尝试克隆失败（共$MAX_RETRIES次）"
             
-            # 提供手动下载选项
-            echo "💡 尝试备用方案：手动下载项目文件"
+            # 提供多种备用方案
+            echo ""
+            echo "💡 尝试备用方案..."
             
-            # 创建基本项目结构
-            mkdir -p public
+            # 方案1: 使用wget下载zip包（推荐）
+            echo "方案1: 使用wget下载zip包"
+            if command -v wget >/dev/null 2>&1; then
+                echo "正在下载项目zip包..."
+                if wget -q https://github.com/bqyrqhxwc7-bot/txk/archive/main.zip -O main.zip; then
+                    echo "✅ 下载成功"
+                    unzip -q main.zip
+                    mv txk-main/* ./
+                    mv txk-main/.[^.]* ./ 2>/dev/null || true
+                    rm -rf txk-main main.zip
+                    echo "✅ 已解压项目文件"
+                else
+                    echo "❌ wget下载失败"
+                fi
+            else
+                echo "⚠️ wget未安装，跳过方案1"
+            fi
+            
+            # 方案2: 使用curl下载tar.gz
+            echo ""
+            echo "方案2: 使用curl下载tar.gz"
+            if command -v curl >/dev/null 2>&1; then
+                echo "正在下载项目tar.gz..."
+                if curl -sL https://github.com/bqyrqhxwc7-bot/txk/archive/main.tar.gz -o main.tar.gz; then
+                    echo "✅ 下载成功"
+                    tar -xzf main.tar.gz
+                    mv txk-main/* ./
+                    mv txk-main/.[^.]* ./ 2>/dev/null || true
+                    rm -rf txk-main main.tar.gz
+                    echo "✅ 已解压项目文件"
+                else
+                    echo "❌ curl下载失败"
+                fi
+            else
+                echo "⚠️ curl未安装，跳过方案2"
+            fi
+            
+            # 方案3: 创建最小化项目结构
+            echo ""
+            echo "方案3: 创建最小化项目结构（确保基本功能）"
             cat > server.js << 'EOF'
 const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const path = require('path');
-require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // 中间件
-app.use(express.json());
-app.use(express.static('public'));
+app.use(cors());
+app.use(bodyParser.json());
+app.use(express.static('.'));
 
 // MongoDB连接
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/barrelManagement', {
@@ -152,44 +200,61 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/barrelMan
 
 // 基础路由
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.send('<h1>📦 桶管理系统</h1><p>服务已启动，请配置前端文件</p>');
 });
 
 app.get('/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });
+EOF
+
+            cat > index.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <title>桶管理系统</title>
+</head>
+<body>
+    <h1>📦 桶管理系统</h1>
+    <p>欢迎使用现代化桶管理平台</p>
+    <p>请确保部署完整项目文件</p>
+</body>
+</html>
 EOF
 
             cat > package.json << 'EOF'
 {
   "name": "barrel-management",
   "version": "1.0.0",
-  "description": "现代化桶管理系统",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.17.3",
-    "mongoose": "^6.12.4",
-    "dotenv": "^16.0.3"
-  },
-  "devDependencies": {
-    "nodemon": "^2.0.20"
-  },
-  "engines": {
-    "node": ">=14.17.0"
+    "cors": "^2.8.5",
+    "body-parser": "^1.19.2",
+    "mongoose": "^6.12.4"
   }
 }
 EOF
 
-            echo "✅ 已创建基础项目文件，您可以手动添加前端文件"
-            break
+            echo "✅ 已创建最小化项目结构"
+            
+            # 如果所有方案都失败，提示用户手动操作
+            if [ ! -f "index.html" ] || [ ! -f "server.js" ]; then
+                echo ""
+                echo "❌ 所有自动方案失败"
+                echo "请手动执行以下步骤："
+                echo "1. 在本地电脑下载: https://github.com/bqyrqhxwc7-bot/txk/archive/main.zip"
+                echo "2. 解压后上传到服务器 /var/www/barrel-management/"
+                echo "3. 运行: npm install"
+                echo "4. 重启服务: systemctl restart barrel-management"
+            fi
         fi
     fi
 done

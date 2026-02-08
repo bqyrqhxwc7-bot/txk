@@ -1,192 +1,96 @@
 # 🛠️ 部署问题解决指南
 
-本文档提供了桶管理系统部署过程中常见问题的详细解决方案。
-
-## 🔧 前端显示问题
-
-### 问题1: 浏览器显示黑屏/空白页
-```
-访问 http://服务器IP:3000 显示黑屏
-```
-
-**原因**: 
-- 静态文件服务配置错误
-- 前端文件缺失或路径不正确
-- CORS策略阻止资源加载
-- 浏览器缓存问题
-
-**解决方案**:
-
-#### 方法一: 检查静态文件配置（推荐）
-```bash
-# 1. 检查server.js中的静态文件配置
-cat server.js | grep "express.static"
-
-# 2. 确保使用绝对路径
-# 修改为：
-# const path = require('path');
-# const __dirname = path.dirname(require.main.filename);
-# app.use(express.static(path.join(__dirname, '.')));
-```
-
-#### 方法二: 手动验证前端文件
-```bash
-# 检查关键文件是否存在
-ls -la index.html style.css script.js
-
-# 测试本地访问
-curl -I http://localhost:3000/index.html
-curl -I http://localhost:3000/style.css
-curl -I http://localhost:3000/script.js
-
-# 如果返回404，说明静态文件服务配置有问题
-```
-
-#### 方法三: 使用浏览器开发者工具诊断
-1. 打开浏览器开发者工具 (F12)
-2. 切换到 **Network** 标签
-3. 刷新页面
-4. 查看哪些文件返回404错误
-5. 根据404的文件路径调整静态文件配置
-
-### 问题2: 缺少canvas模块
-```
-Error: Cannot find module 'canvas'
-```
-
-**原因**: canvas是原生模块，需要系统级依赖支持
-
-**解决方案**:
-
-#### 方法一: 使用修复脚本（推荐）
-```bash
-curl -O https://raw.githubusercontent.com/bqyrqhxwc7-bot/txk/main/fix-dependencies.sh
-chmod +x fix-dependencies.sh
-sudo ./fix-dependencies.sh
-```
-
-#### 方法二: 手动修复
-```bash
-# 以root身份执行
-sudo su
-
-cd /var/www/barrel-management
-
-# 安装canvas系统依赖
-apt update
-apt install -y \
-    libcairo2-dev \
-    libpango1.0-dev \
-    libjpeg-dev \
-    libgif-dev \
-    librsvg2-dev
-
-# 重新安装Node.js依赖
-rm -rf node_modules package-lock.json
-npm install --production
-
-# 重启服务
-systemctl restart barrel-management
-```
-
-### 问题2: sharp模块编译失败
-```
-Error: The module 'sharp' was compiled against a different Node.js version
-```
-
-**解决方案**:
-```bash
-# 安装sharp所需系统依赖
-apt install -y \
-    libvips-dev \
-    libglib2.0-dev \
-    libgobject-2.0-dev \
-    libcairo2-dev \
-    libpango1.0-dev \
-    libgif-dev \
-    libjpeg-dev \
-    libpng-dev \
-    libtiff-dev \
-    libwebp-dev \
-    libxml2-dev
-
-# 重新安装依赖
-cd /var/www/barrel-management
-rm -rf node_modules package-lock.json
-npm install --force
-```
-
 ## 🔧 Git克隆相关问题
 
-### 问题3: HTTP2 framing layer错误
+### 问题1: 克隆失败且重试次数不足
 ```
-error: RPC failed; curl 16 Error in the HTTP2 framing layer
-fatal: error reading section header 'shallow-info'
-```
-
-**解决方案**: 
-参考 [GIT_TROUBLESHOOTING.md](file://c:\Users\sr291\Desktop\TX\GIT_TROUBLESHOOTING.md)
-
-## 🔧 目录相关问题
-
-### 问题4: `find` 命令报错
-```
-find: '/var/www/barrel-management': No such file or directory
+🔄 尝试第 1 次克隆...
+⚠️  克隆失败，1秒后重试...
+🔄 尝试第 2 次克隆...
+⚠️  克隆失败0，2秒后重试...
+❌ 多次尝试克隆失败
 ```
 
-**解决方案**: 
-参考之前的修复方案
+**原因**: 原始部署脚本的重试策略过于激进（3次重试，短等待时间），不适合网络不稳定环境
+
+**解决方案**: 使用增强版修复脚本
+
+#### 方法一: 使用增强版修复脚本（推荐）
+```bash
+# 下载增强版修复脚本
+curl -O https://raw.githubusercontent.com/bqyrqhxwc7-bot/txk/main/enhanced-git-fix.sh
+chmod +x enhanced-git-fix.sh
+sudo ./enhanced-git-fix.sh
+```
+
+**增强特性**:
+- ✅ 6次重试机会（原为3次）
+- ✅ 指数退避等待（3s→6s→12s→24s→30s→30s）
+- ✅ 多种克隆方法尝试（浅克隆、HTTP/1.1等）
+- ✅ 自动备用方案（zip下载、tar.gz下载、最小化项目创建）
+- ✅ 详细的网络诊断
+
+#### 方法二: 手动优化重试策略
+```
+# 在服务器上执行
+cd /var/www/barrel-management
+
+# 设置更合理的Git配置
+git config --global http.postBuffer 524288000
+git config --global http.lowSpeedLimit 0
+git config --global http.lowSpeedTime 999999
+git config --global http.version HTTP/1.1
+git config --global core.compression 0
+
+# 手动重试（等待更长时间）
+for i in {1..6}; do
+    echo "尝试第 $i 次..."
+    if git clone https://github.com/bqyrqhxwc7-bot/txk.git .; then
+        echo "成功！"
+        break
+    else
+        wait_time=$((3 * (2 ** ($i - 1))))
+        if [ $wait_time -gt 30 ]; then wait_time=30; fi
+        echo "等待 ${wait_time} 秒..."
+        sleep $wait_time
+    fi
+done
+```
+
+### 问题2: 前端文件缺失导致"有服务无内容"
+```
+ls: cannot access 'index.html': No such file or directory
+```
+
+**解决方案**: 确保完整部署所有文件
+- 使用增强版脚本自动创建最小化前端
+- 或手动上传前端文件
+- 或使用zip/tar.gz方式完整下载项目
 
 ## 🔧 服务启动问题诊断
 
-### 常用检查命令
-```bash
-# 检查服务状态
-systemctl status barrel-management
-
-# 查看实时日志
-journalctl -u barrel-management -f
-
-# 检查端口占用
-netstat -tlnp | grep :3000
-
-# 测试应用健康检查
-curl http://localhost:3000/health
-
-# 验证MongoDB连接
-systemctl status mongod
-
-# 检查静态文件是否可访问
-curl -I http://localhost:3000/index.html
-curl -I http://localhost:3000/style.css
-curl -I http://localhost:3000/script.js
-```
-
-### 常见启动失败原因
-1. **端口被占用**: 检查是否有其他服务占用3000端口
-2. **数据库连接失败**: 确认MongoDB服务运行正常
-3. **权限问题**: 检查应用目录权限设置
-4. **依赖缺失**: 运行依赖修复脚本
-5. **环境变量**: 检查.env配置文件
+### 关键检查清单
+1. **文件完整性**: `ls -la index.html style.css script.js server.js`
+2. **端口监听**: `netstat -tlnp | grep :3000`
+3. **防火墙**: `ufw status` 和云服务器安全组
+4. **绑定地址**: 确认server.js中使用 `app.listen(PORT, '0.0.0.0')`
+5. **依赖安装**: `npm install --production`
 
 ### 紧急恢复步骤
 ```bash
 # 1. 停止服务
 systemctl stop barrel-management
 
-# 2. 检查错误日志
-journalctl -u barrel-management --since "10 minutes ago"
-
-# 3. 验证基本环境
-node --version
-npm --version
-systemctl status mongod
-
-# 4. 重新安装依赖
+# 2. 清理并重新部署
+rm -rf /var/www/barrel-management/*
 cd /var/www/barrel-management
-npm install
 
-# 5. 启动服务
+# 3. 使用增强脚本部署
+curl -O https://raw.githubusercontent.com/bqyrqhxwc7-bot/txk/main/enhanced-git-fix.sh
+chmod +x enhanced-git-fix.sh
+sudo ./enhanced-git-fix.sh
+
+# 4. 启动服务
 systemctl start barrel-management
 ```
 
