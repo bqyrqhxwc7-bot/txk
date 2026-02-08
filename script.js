@@ -268,3 +268,29 @@ function showMainMenu() {
         qrDownloadBtn.style.display = 'none';
     }
 }
+
+// 基础前端脚本
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('桶管理系统前端已加载');
+    
+    // 简单的交互效果
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+        });
+    });
+    
+    // 模拟数据加载
+    setTimeout(() => {
+        document.querySelector('.stat-number:nth-child(1)').textContent = '12';
+        document.querySelector('.stat-number:nth-child(2)').textContent = '8';
+        document.querySelector('.stat-number:nth-child(3)').textContent = '4';
+    }, 1000);
+});

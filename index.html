@@ -8,57 +8,46 @@
 </head>
 <body>
     <div class="container">
-        <h1>桶管理系统</h1>
+        <header>
+            <h1>📦 桶管理系统</h1>
+            <p>现代化桶生命周期管理平台</p>
+        </header>
         
-        <div id="main-menu">
-            <button id="add-barrel-btn">添加桶</button>
-            <button id="scan-qr-btn">扫描二维码</button>
-        </div>
-
-        <div id="barrel-list">
-            <h2>桶列表</h2>
-            <ul id="barrels"></ul>
-        </div>
-
-        <div id="barrel-detail" style="display: none;">
-            <h2>桶详情</h2>
-            <p>桶ID: <span id="barrel-id"></span></p>
-            <p>当前状态: <span id="barrel-status"></span></p>
-            <select id="status-select">
-                <option value="清洗">清洗</option>
-                <option value="运输">运输</option>
-                <option value="装载">装载</option>
-                <option value="空闲">空闲</option>
-            </select>
-            <button id="update-status-btn">更新状态</button>
-            <button id="delete-barrel-btn">删除桶</button>
-            <button id="download-qr-btn" style="display: none;">下载二维码</button>
-            <button id="back-btn">返回</button>
-        </div>
-
-        <div id="add-barrel-form" style="display: none;">
-            <h2>添加新桶</h2>
-            <input type="text" id="new-barrel-id" placeholder="输入桶ID">
-            <select id="new-barrel-status">
-                <option value="清洗">清洗</option>
-                <option value="运输">运输</option>
-                <option value="装载">装载</option>
-                <option value="空闲">空闲</option>
-            </select>
-            <button id="save-barrel-btn">保存</button>
-            <button id="cancel-add-btn">取消</button>
-        </div>
-
-        <div id="scan-qr-form" style="display: none;">
-            <h2>扫描二维码</h2>
-            <input type="file" id="qr-image-input" accept="image/*">
-            <button id="process-qr-btn">处理二维码</button>
-            <button id="cancel-scan-btn">取消</button>
-        </div>
+        <main>
+            <div class="dashboard">
+                <div class="card">
+                    <h2>欢迎使用桶管理系统</h2>
+                    <p>这是一个基于二维码技术的现代化桶管理解决方案</p>
+                    <div class="features">
+                        <div class="feature">✅ 二维码生成与下载</div>
+                        <div class="feature">✅ 二维码扫描识别</div>
+                        <div class="feature">✅ 实时状态更新</div>
+                        <div class="feature">✅ 数据持久化存储</div>
+                    </div>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-number">0</span>
+                        <span class="stat-label">总桶数</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">0</span>
+                        <span class="stat-label">使用中</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">0</span>
+                        <span class="stat-label">空闲</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>© 2024 桶管理系统 | 基于Node.js + Express + MongoDB</p>
+        </footer>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

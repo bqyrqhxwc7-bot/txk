@@ -1,57 +1,120 @@
-body {
-    font-family: Arial, sans-serif;
+/* 基础样式 */
+* {
     margin: 0;
-    padding: 20px;
-    background-color: #f0f0f0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fa;
+    color: #333;
+    line-height: 1.6;
 }
 
 .container {
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
-    background-color: white;
     padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
-h1, h2 {
-    color: #333;
-}
-
-button {
-    background-color: #007bff;
+header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 20px;
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
     color: white;
-    border: none;
-    padding: 10px 20px;
-    margin: 5px;
-    border-radius: 5px;
-    cursor: pointer;
+    border-radius: 8px;
 }
 
-button:hover {
-    background-color: #0056b3;
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
 }
 
-#barrels {
-    list-style-type: none;
-    padding: 0;
+header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
 }
 
-#barrels li {
-    background-color: #f8f9fa;
-    margin: 5px 0;
-    padding: 10px;
-    border-radius: 5px;
-    cursor: pointer;
+.dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
-#barrels li:hover {
-    background-color: #e9ecef;
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-input, select {
-    padding: 5px;
-    margin: 5px;
-    border: 1px solid #ddd;
-    border-radius: 3px;
+.card h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+}
+
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.feature {
+    background: #e3f2fd;
+    padding: 12px 15px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.stats {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    text-align: center;
+    flex: 1;
+    min-width: 150px;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #3498db;
+    display: block;
+}
+
+.stat-label {
+    font-size: 1rem;
+    color: #7f8c8d;
+    display: block;
+}
+
+footer {
+    text-align: center;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 2rem;
+    }
+    
+    .stats {
+        flex-direction: column;
+    }
 }
