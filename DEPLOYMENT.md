@@ -14,17 +14,17 @@
 
 1. **连接到ECS实例**
 ```bash
-ssh root@your-server-ip
+ssh root@172.24.92.188
 ```
 
 2. **执行部署脚本**
 ```bash
 # 下载部署脚本
-wget https://raw.githubusercontent.com/your-repo/deploy-script.sh
+wget https://github.com/bqyrqhxwc7-bot/txk/blob/main/deploy.sh
 
 # 修改权限并执行
-chmod +x deploy-script.sh
-./deploy-script.sh
+chmod +x deploy.sh
+./deploy.sh
 ```
 
 3. **手动部署步骤**
