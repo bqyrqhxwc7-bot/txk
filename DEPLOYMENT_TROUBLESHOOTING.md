@@ -2,214 +2,142 @@
 
 本文档提供了桶管理系统部署过程中常见问题的详细解决方案。
 
-## 🔧 Git克隆相关问题
+## 🔧 依赖相关问题
 
-### 问题1: HTTP2 framing layer错误
+### 问题1: 缺少canvas模块
 ```
-error: RPC failed; curl 16 Error in the HTTP2 framing layer
-fatal: error reading section header 'shallow-info'
+Error: Cannot find module 'canvas'
 ```
 
-**原因**: 网络不稳定或GitHub服务器HTTP/2协议兼容性问题
+**原因**: canvas是原生模块，需要系统级依赖支持
 
 **解决方案**:
 
 #### 方法一: 使用修复脚本（推荐）
 ```bash
-curl -O https://raw.githubusercontent.com/bqyrqhxwc7-bot/txk/main/git-clone-fix.sh
-chmod +x git-clone-fix.sh
-sudo ./git-clone-fix.sh
+curl -O https://raw.githubusercontent.com/bqyrqhxwc7-bot/txk/main/fix-dependencies.sh
+chmod +x fix-dependencies.sh
+sudo ./fix-dependencies.sh
 ```
 
-#### 方法二: 手动优化Git配置
+#### 方法二: 手动修复
 ```bash
 # 以root身份执行
 sudo su
 
 cd /var/www/barrel-management
 
-# 优化Git配置
-git config --global http.postBuffer 524288000
-git config --global http.lowSpeedLimit 0
-git config --global http.lowSpeedTime 999999
-git config --global http.version HTTP/1.1
-git config --global core.compression 0
+# 安装canvas系统依赖
+apt update
+apt install -y \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libjpeg-dev \
+    libgif-dev \
+    librsvg2-dev
 
-# 尝试克隆
-git clone https://github.com/bqyrqhxwc7-bot/txk.git .
+# 重新安装Node.js依赖
+rm -rf node_modules package-lock.json
+npm install --production
+
+# 重启服务
+systemctl restart barrel-management
 ```
 
-#### 方法三: 使用备用下载方式
-```bash
-# 使用wget下载zip包
-cd /var/www/barrel-management
-wget https://github.com/bqyrqhxwc7-bot/txk/archive/main.zip
-unzip main.zip
-mv txk-main/* ./
-mv txk-main/.[^.]* ./ 2>/dev/null || true
-rm -rf txk-main main.zip
-
-# 或使用curl下载tar.gz
-cd /var/www/barrel-management
-curl -L https://github.com/bqyrqhxwc7-bot/txk/archive/main.tar.gz -o main.tar.gz
-tar -xzf main.tar.gz
-mv txk-main/* ./
-mv txk-main/.[^.]* ./ 2>/dev/null || true
-rm -rf txk-main main.tar.gz
-```
-
-### 问题2: 网络超时错误
-```
-fatal: unable to access 'https://github.com/...': Failed to connect to github.com port 443
-```
-
-**解决方案**:
-```bash
-# 检查网络连接
-ping github.com
-traceroute github.com
-
-# 配置代理（如果需要）
-git config --global http.proxy http://proxy.server:port
-git config --global https.proxy https://proxy.server:port
-
-# 或使用SSH方式克隆（需要配置SSH密钥）
-git clone git@github.com:bqyrqhxwc7-bot/txk.git .
-```
-
-## 🔧 目录相关问题
-
-### 问题1: `find` 命令报错
-```
-find: '/var/www/barrel-management': No such file or directory
-```
-
-**原因**: 部署脚本在清理已有目录时，由于并发操作或权限问题导致目录在find执行时不存在。
-
-**解决方案**:
-
-#### 方法一: 使用修复脚本（推荐）
-```bash
-# 下载并运行修复脚本
-curl -O https://raw.githubusercontent.com/bqyrqhxwc7-bot/txk/main/fix-deployment.sh
-chmod +x fix-deployment.sh
-sudo ./fix-deployment.sh
-
-# 然后重新运行部署
-curl -O https://raw.githubusercontent.com/bqyrqhxwc7-bot/txk/main/deploy.sh
-chmod +x deploy.sh
-sudo ./deploy.sh
-```
-
-#### 方法二: 手动清理
-```bash
-# 以root身份执行
-sudo su
-
-# 备份重要配置（如果存在）
-if [ -f "/var/www/barrel-management/.env" ]; then
-    cp /var/www/barrel-management/.env /tmp/env_backup
-fi
-
-# 强制删除目录
-rm -rf /var/www/barrel-management
-
-# 重新创建目录
-mkdir -p /var/www/barrel-management
-chmod 755 /var/www/barrel-management
-
-# 恢复配置（如果之前有备份）
-if [ -f "/tmp/env_backup" ]; then
-    cp /tmp/env_backup /var/www/barrel-management/.env
-    rm -f /tmp/env_backup
-fi
-```
-
-## 🔧 Node.js 相关问题
-
-### 问题2: Sharp模块编译错误
+### 问题2: sharp模块编译失败
 ```
 Error: The module 'sharp' was compiled against a different Node.js version
 ```
 
 **解决方案**:
 ```bash
-# 1. 确认Node.js版本
-node --version  # 应该显示 v18.x.x
+# 安装sharp所需系统依赖
+apt install -y \
+    libvips-dev \
+    libglib2.0-dev \
+    libgobject-2.0-dev \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libgif-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    libwebp-dev \
+    libxml2-dev
 
-# 2. 如果版本过低，升级Node.js
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# 3. 清理并重新安装依赖
+# 重新安装依赖
 cd /var/www/barrel-management
 rm -rf node_modules package-lock.json
 npm install --force
 ```
 
-### 问题3: 权限不足错误
+## 🔧 Git克隆相关问题
+
+### 问题3: HTTP2 framing layer错误
 ```
-npm ERR! Error: EACCES: permission denied
+error: RPC failed; curl 16 Error in the HTTP2 framing layer
+fatal: error reading section header 'shallow-info'
 ```
 
-**解决方案**:
+**解决方案**: 
+参考 [GIT_TROUBLESHOOTING.md](file://c:\Users\sr291\Desktop\TX\GIT_TROUBLESHOOTING.md)
+
+## 🔧 目录相关问题
+
+### 问题4: `find` 命令报错
+```
+find: '/var/www/barrel-management': No such file or directory
+```
+
+**解决方案**: 
+参考之前的修复方案
+
+## 🔧 服务启动问题诊断
+
+### 常用检查命令
 ```bash
-# 修改npm全局目录权限
-sudo chown -R $(whoami) ~/.npm
-sudo chown -R $(whoami) /usr/local/lib/node_modules
+# 检查服务状态
+systemctl status barrel-management
 
-# 或者使用nvm安装Node.js（推荐）
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-source ~/.bashrc
-nvm install 18
-nvm use 18
+# 查看实时日志
+journalctl -u barrel-management -f
+
+# 检查端口占用
+netstat -tlnp | grep :3000
+
+# 测试应用健康检查
+curl http://localhost:3000/health
+
+# 验证MongoDB连接
+systemctl status mongod
 ```
 
-## 🔧 MongoDB 相关问题
+### 常见启动失败原因
+1. **端口被占用**: 检查是否有其他服务占用3000端口
+2. **数据库连接失败**: 确认MongoDB服务运行正常
+3. **权限问题**: 检查应用目录权限设置
+4. **依赖缺失**: 运行依赖修复脚本
+5. **环境变量**: 检查.env配置文件
 
-### 问题4: 数据库连接失败
-```
-MongoServerSelectionError: connect ECONNREFUSED 127.0.0.1:27017
-```
-
-**诊断和解决**:
+### 紧急恢复步骤
 ```bash
-# 1. 检查MongoDB服务状态
-sudo systemctl status mongod
+# 1. 停止服务
+systemctl stop barrel-management
 
-# 2. 启动MongoDB服务
-sudo systemctl start mongod
-sudo systemctl enable mongod
+# 2. 检查错误日志
+journalctl -u barrel-management --since "10 minutes ago"
 
-# 3. 检查端口监听
-sudo netstat -tlnp | grep 27017
+# 3. 验证基本环境
+node --version
+npm --version
+systemctl status mongod
 
-# 4. 测试数据库连接
-mongosh --eval "db.stats()"
-```
+# 4. 重新安装依赖
+cd /var/www/barrel-management
+npm install
 
-### 问题5: 数据库认证失败
-```
-Authentication failed
-```
-
-**解决方案**:
-```bash
-# 1. 进入MongoDB shell
-mongosh
-
-# 2. 切换到admin数据库
-use admin
-
-# 3. 创建管理员用户
-db.createUser({
-  user: "admin",
-  pwd: "your_secure_password",
-  roles: [{ role: "root", db: "admin" }]
-})
-
-# 4. 重启MongoDB启用认证
-sudo systemctl restart mongod
+# 5. 启动服务
+systemctl start barrel-management
 ```
 
 ## 🔧 网络和防火墙问题
@@ -327,4 +255,4 @@ sudo ./deploy.sh
 4. MongoDB版本 (`mongod --version`)
 5. 部署脚本的完整执行输出
 
-可以通过GitHub Issues或邮件联系技术支持。
+可以通过GitHub Issues或邮件联系技术支持.

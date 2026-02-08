@@ -474,7 +474,18 @@ a.download = `${barrelId}QR.png`; // 符合命名规范
 
 #### 常见部署问题
 
-1. **Git克隆失败**
+1. **依赖缺失问题**
+   ```
+   Error: Cannot find module 'canvas'
+   ```
+   **解决方案**: 
+   ```bash
+   curl -O https://raw.githubusercontent.com/bqyrqhxwc7-bot/txk/main/fix-dependencies.sh
+   chmod +x fix-dependencies.sh
+   sudo ./fix-dependencies.sh
+   ```
+
+2. **Git克隆失败**
    ```
    error: RPC failed; curl 16 Error in the HTTP2 framing layer
    ```
@@ -485,7 +496,7 @@ a.download = `${barrelId}QR.png`; // 符合命名规范
    sudo ./git-clone-fix.sh
    ```
 
-2. **目录清理错误**
+3. **目录清理错误**
    ```
    find: '/var/www/barrel-management': No such file or directory
    ```
@@ -496,7 +507,7 @@ a.download = `${barrelId}QR.png`; // 符合命名规范
    sudo ./fix-deployment.sh
    ```
 
-3. **Node.js版本问题**
+4. **Node.js版本问题**
    ```bash
    Error: The module 'sharp' was compiled against a different Node.js version
    ```
@@ -504,7 +515,7 @@ a.download = `${barrelId}QR.png`; // 符合命名规范
    - 升级到Node.js 18 LTS
    - 重新安装依赖: `npm install --force`
 
-4. **MongoDB连接失败**
+5. **MongoDB连接失败**
    ```
    MongoServerSelectionError: connect ECONNREFUSED
    ```
@@ -514,7 +525,7 @@ a.download = `${barrelId}QR.png`; // 符合命名规范
    sudo systemctl restart mongod
    ```
 
-5. **权限问题**
+6. **权限问题**
    ```
    EACCES: permission denied
    ```
