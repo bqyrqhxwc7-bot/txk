@@ -1,39 +1,57 @@
 #!/bin/bash
 
-# 桶管理系统一键部署脚本（真正的一键部署版本）
-# 适用于Ubuntu 20.04 LTS及以上版本
-# 自动克隆GitHub仓库
-# 已修复sharp编译依赖问题
+# 桶管理系统一键部署脚本
+# 支持Ubuntu 20.04+/Debian 11+
+# 作者: Your Name
+# 版本: 1.0
 
-set -e
+set -e  # 遇到错误立即退出
 
-echo "🚀 开始真正的一键部署桶管理系统..."
+# 颜色定义
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-# 检查root权限
-if [ "$EUID" -ne 0 ]; then
-  echo "请以root用户运行此脚本"
-  exit 1
+# 错误处理函数
+error_exit() {
+    echo -e "${RED}❌ 错误: $1${NC}" >&2
+    exit 1
+}
+
+# 检查是否以root权限运行
+if [[ $EUID -ne 0 ]]; then
+   echo -e "${RED}此脚本必须以root权限运行${NC}" 
+   exit 1
 fi
 
-# 获取当前目录（用于后续操作）
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+echo -e "${BLUE}🚀 开始部署桶管理系统...${NC}"
 
-# 安装基础工具
-echo "🔧 安装基础工具..."
+# 更新系统包
+echo "🔄 更新系统包..."
 apt update && apt upgrade -y
-apt install -y git curl wget sudo
+
+# 安装必要工具
+echo "🔧 安装必要工具..."
+apt install -y curl wget git gnupg lsb-release ufw
 
 # 安装Node.js 18 LTS
-echo "📦 安装Node.js..."
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+echo "📦 安装Node.js 18 LTS..."
+curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
 apt install -y nodejs
 
-# 安装MongoDB 6.0（修复apt-key弃用问题）
-echo "💾 安装MongoDB..."
+# 验证Node.js安装
+node_version=$(node --version)
+npm_version=$(npm --version)
+echo -e "${GREEN}✅ Node.js $node_version 和 npm $npm_version 安装完成${NC}"
+
+# 安装MongoDB 6.0
+echo "💾 安装MongoDB 6.0..."
 # 创建密钥环目录
 mkdir -p /etc/apt/keyrings
 
-# 下载并安装GPG密钥（新方法）
+# 下载并安装GPG密钥
 curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | \
    sudo gpg --dearmor -o /etc/apt/keyrings/mongodb-server-6.0.gpg
 
@@ -50,30 +68,51 @@ echo "🔧 启动MongoDB..."
 systemctl start mongod
 systemctl enable mongod
 
-# 创建应用目录并处理已存在目录的情况
+# 创建应用目录并处理目录存在性问题
 echo "📁 创建应用目录..."
 APP_DIR="/var/www/barrel-management"
-mkdir -p $APP_DIR
-cd $APP_DIR
 
-# 检查目录是否为空，如果非空则清理
-if [ "$(ls -A $APP_DIR)" ]; then
-    echo "⚠️  目录 '$APP_DIR' 已存在且非空，正在清理..."
-    # 删除除隐藏文件外的所有内容（保留.gitignore等配置文件）
-    find $APP_DIR -maxdepth 1 ! -name ".gitignore" ! -name ".env" ! -name ".dockerignore" -type f -delete
-    find $APP_DIR -maxdepth 1 ! -name ".git" ! -name ".gitignore" ! -name ".env" ! -name ".dockerignore" -type d -exec rm -rf {} \;
-    echo "✅ 目录清理完成"
+# 简单直接的处理方式
+if [ -d "$APP_DIR" ]; then
+    echo "⚠️  目录 '$APP_DIR' 已存在"
+    # 备份重要文件
+    if [ -f "$APP_DIR/.env" ]; then
+        cp "$APP_DIR/.env" "/tmp/env_backup" 2>/dev/null || true
+        echo "💾 已备份 .env 文件"
+    fi
+    
+    # 删除整个目录并重新创建
+    rm -rf "$APP_DIR"
+    echo "🗑️  已删除旧目录"
 fi
+
+# 创建新目录
+mkdir -p "$APP_DIR"
+echo "✅ 目录创建完成"
+
+# 恢复备份的配置文件
+if [ -f "/tmp/env_backup" ]; then
+    cp "/tmp/env_backup" "$APP_DIR/.env" 2>/dev/null || true
+    rm -f "/tmp/env_backup"
+    echo "🔄 已恢复 .env 配置文件"
+fi
+
+cd "$APP_DIR"
 
 # 自动克隆GitHub仓库（使用标准URL格式）
 echo "📥 自动克隆GitHub项目..."
 git clone https://github.com/bqyrqhxwc7-bot/txk.git .
 echo "✅ 项目代码已自动克隆完成"
 
-# 安装sharp库所需的系统依赖
+# 安装sharp库所需的系统依赖（修正包名问题）
 echo "🛠️ 安装sharp库系统依赖..."
+# 先更新软件源
+apt update
+
+# 安装核心依赖（已验证在Ubuntu 20.04+上可用）
 apt install -y \
     libvips-dev \
+    libglib2.0-dev \
     libcairo2-dev \
     libpango1.0-dev \
     libgif-dev \
@@ -81,9 +120,13 @@ apt install -y \
     libpng-dev \
     libtiff-dev \
     libwebp-dev \
-    libxml2-dev \
-    libglib2.0-dev \
-    libgobject-2.0-dev
+    libxml2-dev
+
+# 如果上述包仍不可用，尝试安装通用开发包
+if ! dpkg -l | grep -q libglib2.0-dev; then
+    echo "⚠️  尝试安装替代依赖..."
+    apt install -y build-essential libtool autoconf automake
+fi
 
 # 安装应用依赖
 echo "🧩 安装依赖..."
@@ -218,7 +261,7 @@ echo "应用查看地址: http://$(hostname -I | awk '{print $1}')" >> /var/www/
 echo "服务状态: systemctl status barrel-management" >> /var/www/barrel-management/DEPLOYMENT_COMPLETE.txt
 echo "日志查看: journalctl -u barrel-management -f" >> /var/www/barrel-management/DEPLOYMENT_COMPLETE.txt
 
-echo "✅ 真正的一键部署已完成！"
+echo "✅ 部署已完成！"
 echo "访问地址: http://$(hostname -I | awk '{print $1}')"
 echo "服务状态: systemctl status barrel-management"
 echo "日志查看: journalctl -u barrel-management -f"

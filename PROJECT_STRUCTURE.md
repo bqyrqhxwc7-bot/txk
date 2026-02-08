@@ -1,114 +1,114 @@
-# 项目结构说明
-
-## 文件结构
+# 📁 项目结构说明
 
 ```
-TX/
-│
-├── 前端文件
-│   ├── index.html          # 主页面HTML
-│   ├── script.js           # 前端JavaScript逻辑
-│   └── style.css           # CSS样式文件
-│
-├── 后端文件
-│   ├── server.js           # Node.js Express服务器
-│   └── package.json        # Node.js依赖配置
-│
-├── 部署配置
-│   ├── Dockerfile          # Docker镜像构建文件
-│   ├── docker-compose.yml  # Docker容器编排配置
-│   ├── nginx.conf          # Nginx反向代理配置
-│   ├── deploy.sh           # 一键部署脚本
-│   └── deploy-config.js    # 部署配置参数
-│
-├── 环境配置
-│   ├── .env               # 环境变量配置
-│   └── .gitignore         # Git忽略文件配置
-│
-└── 文档文件
-    ├── README.md          # 项目说明文档
-    ├── DEPLOYMENT.md      # 详细部署指南
-    └── PROJECT_STRUCTURE.md  # 项目结构说明
+barrel-management/
+├── server.js              # 主服务器文件
+├── index.html             # 前端主页面
+├── style.css              # 样式文件
+├── script.js              # 前端JavaScript
+├── package.json           # Node.js依赖配置
+├── deploy.sh              # 一键部署脚本
+├── fix-deployment.sh      # 部署问题修复脚本
+├── start-dev.sh           # 开发环境启动脚本
+├── nginx.conf             # Nginx配置文件
+├── docker-compose.yml     # Docker编排文件
+├── Dockerfile             # Docker镜像构建文件
+├── deploy-config.js       # 部署配置文件
+├── .env.example          # 环境变量模板
+├── README.md             # 项目说明文档
+├── DEPLOYMENT.md         # 部署详细说明
+├── DEPLOYMENT_TROUBLESHOOTING.md  # 部署故障排除指南
+└── PROJECT_STRUCTURE.md   # 项目结构说明
 ```
 
-## 核心组件说明
+## 📄 文件说明
 
-### 前端组件
-- **index.html**: 单页面应用程序入口，包含所有UI元素
-- **script.js**: 实现前后端交互逻辑，包括：
-  - API调用封装
-  - UI事件处理
-  - 二维码生成和扫描
-  - 数据展示和表单处理
-- **style.css**: 响应式样式设计
+### 核心应用文件
+- **server.js**: Express服务器主文件，包含所有API路由和数据库连接逻辑
+- **index.html**: 响应式前端界面，支持移动端和桌面端访问
+- **style.css**: 现代化CSS样式，包含响应式设计和动画效果
+- **script.js**: 前端交互逻辑，包含二维码扫描和状态管理功能
 
-### 后端组件
-- **server.js**: Express服务器，提供：
-  - RESTful API接口
-  - 静态文件服务
-  - 数据库操作
-  - 二维码生成服务
-- **package.json**: 项目依赖管理
+### 配置文件
+- **package.json**: Node.js项目依赖和脚本配置
+- **.env.example**: 环境变量配置模板
+- **nginx.conf**: 生产环境Nginx反向代理配置
+- **docker-compose.yml**: Docker容器编排配置
+- **Dockerfile**: Docker镜像构建配置
 
-### 部署组件
-- **Dockerfile**: 容器化应用构建配置
-- **docker-compose.yml**: 多容器应用编排
-- **nginx.conf**: 生产环境反向代理配置
-- **deploy.sh**: 自动化部署脚本
+### 部署相关
+- **deploy.sh**: 🔧 一键部署脚本，自动化完成整个部署流程
+- **fix-deployment.sh**: 🛠️ 部署问题修复脚本，解决目录和权限问题
+- **start-dev.sh**: 🚀 开发环境快速启动脚本
+- **deploy-config.js**: ⚙️ 部署配置参数文件
 
-## 数据流向
+### 文档文件
+- **README.md**: 📖 项目主文档，包含快速开始和基本使用说明
+- **DEPLOYMENT.md**: 📋 详细的部署指南和技术说明
+- **DEPLOYMENT_TROUBLESHOOTING.md**: 🔧 部署问题诊断和解决方案
+- **PROJECT_STRUCTURE.md**: 📁 当前文件（项目结构说明）
 
+## 🎯 关键特性
+
+### 🔄 自动化部署
+- 一键完成系统更新、依赖安装、服务配置
+- 自动处理目录清理和权限设置
+- 智能错误检测和恢复机制
+
+### 🛡️ 安全防护
+- 环境变量隔离敏感配置
+- UFW防火墙自动配置
+- systemd服务管理确保稳定性
+
+### 📱 响应式设计
+- 移动端优化的用户界面
+- 触摸友好的交互体验
+- 适应不同屏幕尺寸
+
+### 🔍 功能完整
+- 二维码生成和扫描
+- 实时状态更新
+- 数据持久化存储
+- 健康检查监控
+
+## 🚀 快速开始
+
+```bash
+# 一键部署（生产环境）
+curl -O https://raw.githubusercontent.com/bqyrqhxwc7-bot/txk/main/deploy.sh
+chmod +x deploy.sh
+sudo ./deploy.sh
+
+# 开发环境启动
+./start-dev.sh
+
+# 遇到问题时使用修复脚本
+curl -O https://raw.githubusercontent.com/bqyrqhxwc7-bot/txk/main/fix-deployment.sh
+chmod +x fix-deployment.sh
+sudo ./fix-deployment.sh
 ```
-用户操作 → 前端JS → API请求 → 后端服务器 → MongoDB
-                                      ↓
-                                二维码生成 ← 返回数据
+
+## 📊 技术栈
+
+- **后端**: Node.js + Express + MongoDB
+- **前端**: HTML5 + CSS3 + JavaScript (ES6+)
+- **部署**: Docker + Nginx + systemd
+- **数据库**: MongoDB 6.0+
+- **二维码**: QRCode.js + jsQR
+
+## 🔧 维护说明
+
+### 日常运维
+```bash
+# 查看应用状态
+sudo systemctl status barrel-management
+
+# 查看实时日志
+sudo journalctl -u barrel-management -f
+
+# 重启服务
+sudo systemctl restart barrel-management
 ```
 
-## API端点
-
-### 桶管理API
-- `GET /api/barrels` - 获取桶列表
-- `POST /api/barrels` - 创建新桶
-- `PUT /api/barrels/:id` - 更新桶状态
-- `DELETE /api/barrels/:id` - 删除桶
-
-### 二维码API
-- `GET /api/barrels/:id/qrcode` - 生成二维码图片
-
-### 工具API
-- `POST /api/scan-qrcode` - 图片二维码识别
-- `GET /health` - 服务健康检查
-
-## 部署架构
-
-### 开发环境
-```
-浏览器 → Node.js服务器 → MongoDB
-```
-
-### 生产环境
-```
-用户 → Nginx → Node.js应用 → MongoDB
-       (负载均衡/SSL)  (API服务)   (数据存储)
-```
-
-## 安全考虑
-
-1. **CORS配置**: 限制跨域请求来源
-2. **输入验证**: 后端数据校验
-3. **HTTPS支持**: SSL/TLS加密传输
-4. **环境隔离**: 开发/测试/生产环境分离
-
-## 性能优化
-
-1. **静态资源缓存**: Nginx缓存配置
-2. **数据库索引**: MongoDB查询优化
-3. **连接池**: 数据库连接复用
-4. **压缩传输**: Gzip/Brotli压缩
-
-## 扩展性设计
-
-1. **微服务架构**: 可拆分为独立服务
-2. **消息队列**: 异步任务处理
-3. **缓存层**: Redis缓存热点数据
-4. **负载均衡**: 多实例部署支持
+### 故障排查
+参考 `DEPLOYMENT_TROUBLESHOOTING.md` 文档获取详细的故障排除指南。

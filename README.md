@@ -472,6 +472,59 @@ a.download = `${barrelId}QR.png`; // 符合命名规范
    - 检查桶ID格式是否符合要求
    - 检查服务器是否有写入权限
 
+#### 常见部署问题
+
+1. **目录清理错误**
+   ```
+   find: '/var/www/barrel-management': No such file or directory
+   ```
+   **解决方案**: 运行修复脚本
+   ```bash
+   curl -O https://raw.githubusercontent.com/bqyrqhxwc7-bot/txk/main/fix-deployment.sh
+   chmod +x fix-deployment.sh
+   sudo ./fix-deployment.sh
+   ```
+
+2. **Node.js版本问题**
+   ```bash
+   Error: The module 'sharp' was compiled against a different Node.js version
+   ```
+   **解决方案**: 
+   - 升级到Node.js 18 LTS
+   - 重新安装依赖: `npm install --force`
+
+3. **MongoDB连接失败**
+   ```
+   MongoServerSelectionError: connect ECONNREFUSED
+   ```
+   **解决方案**:
+   ```bash
+   sudo systemctl status mongod
+   sudo systemctl restart mongod
+   ```
+
+4. **权限问题**
+   ```
+   EACCES: permission denied
+   ```
+   **解决方案**:
+   ```bash
+   sudo chown -R $USER:$USER /var/www/barrel-management
+   sudo chmod -R 755 /var/www/barrel-management
+   ```
+
+#### 系统要求检查
+```bash
+# 检查Node.js版本
+node --version  # 应该 >= 14.17.0
+
+# 检查MongoDB状态
+sudo systemctl status mongod
+
+# 检查端口占用
+sudo netstat -tlnp | grep :3000
+```
+
 ## 开发指南
 
 ### 代码规范
