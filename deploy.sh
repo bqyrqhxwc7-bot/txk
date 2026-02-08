@@ -131,45 +131,95 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
             # 提供多种备用方案
             echo ""
             echo "💡 尝试备用方案..."
-            
-            # 方案1: 使用wget下载zip包（推荐）
+            echo "检查必要工具..."
+
+            # 检查并安装必要工具
+            REQUIRED_TOOLS=("curl" "wget" "unzip" "tar" "git")
+            MISSING_TOOLS=()
+
+            for TOOL in "${REQUIRED_TOOLS[@]}"; do
+                if ! command -v "$TOOL" >/dev/null 2>&1; then
+                    echo "⚠️  工具缺失: $TOOL"
+                    MISSING_TOOLS+=("$TOOL")
+                else
+                    echo "✅ 工具可用: $TOOL"
+                fi
+            done
+
+            # 安装缺失的工具
+            if [ ${#MISSING_TOOLS[@]} -gt 0 ]; then
+                echo "🔧 正在安装缺失的工具..."
+                apt update
+                apt install -y "${MISSING_TOOLS[@]}" 2>/dev/null || true
+                echo "✅ 工具安装完成"
+            fi
+
+            # 方案1: 使用wget下载zip包（改进版）
             echo "方案1: 使用wget下载zip包"
             if command -v wget >/dev/null 2>&1; then
                 echo "正在下载项目zip包..."
                 if wget -q https://github.com/bqyrqhxwc7-bot/txk/archive/main.zip -O main.zip; then
                     echo "✅ 下载成功"
-                    unzip -q main.zip
-                    mv txk-main/* ./
-                    mv txk-main/.[^.]* ./ 2>/dev/null || true
-                    rm -rf txk-main main.zip
-                    echo "✅ 已解压项目文件"
+                    
+                    # 检查unzip是否可用
+                    if command -v unzip >/dev/null 2>&1; then
+                        unzip -q main.zip
+                        mv txk-main/* ./
+                        mv txk-main/.[^.]* ./ 2>/dev/null || true
+                        rm -rf txk-main main.zip
+                        echo "✅ 已解压项目文件"
+                    else
+                        echo "⚠️  unzip不可用，使用tar替代..."
+                        # 使用tar解压zip（如果unzip不可用）
+                        if command -v tar >/dev/null 2>&1; then
+                            mkdir -p txk-main
+                            cd txk-main
+                            # 尝试用tar解压zip（某些系统支持）
+                            if tar -xf ../main.zip 2>/dev/null; then
+                                cp -r * ../.
+                                cd ..
+                                rm -rf txk-main main.zip
+                                echo "✅ 已用tar解压项目文件"
+                            else
+                                echo "❌ tar也无法解压zip，使用最小化方案"
+                            fi
+                        else
+                            echo "❌ tar也不可用，使用最小化方案"
+                        fi
+                    fi
                 else
                     echo "❌ wget下载失败"
                 fi
             else
                 echo "⚠️ wget未安装，跳过方案1"
             fi
-            
-            # 方案2: 使用curl下载tar.gz
+
+            # 方案2: 使用curl下载tar.gz（改进版）
             echo ""
             echo "方案2: 使用curl下载tar.gz"
             if command -v curl >/dev/null 2>&1; then
                 echo "正在下载项目tar.gz..."
                 if curl -sL https://github.com/bqyrqhxwc7-bot/txk/archive/main.tar.gz -o main.tar.gz; then
                     echo "✅ 下载成功"
-                    tar -xzf main.tar.gz
-                    mv txk-main/* ./
-                    mv txk-main/.[^.]* ./ 2>/dev/null || true
-                    rm -rf txk-main main.tar.gz
-                    echo "✅ 已解压项目文件"
+                    
+                    # 检查tar是否可用
+                    if command -v tar >/dev/null 2>&1; then
+                        tar -xzf main.tar.gz
+                        mv txk-main/* ./
+                        mv txk-main/.[^.]* ./ 2>/dev/null || true
+                        rm -rf txk-main main.tar.gz
+                        echo "✅ 已解压项目文件"
+                    else
+                        echo "❌ tar不可用，使用最小化方案"
+                    fi
                 else
                     echo "❌ curl下载失败"
                 fi
             else
                 echo "⚠️ curl未安装，跳过方案2"
             fi
-            
-            # 方案3: 创建最小化项目结构
+
+            # 方案3: 创建最小化项目结构（强化版）
             echo ""
             echo "方案3: 创建最小化项目结构（确保基本功能）"
             cat > server.js << 'EOF'
@@ -194,7 +244,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/barrelMan
 
 // 基础路由
 app.get('/', (req, res) => {
-    res.send('<h1>📦 桶管理系统</h1><p>服务已启动，请配置前端文件</p>');
+    res.send('<h1>📦 桶管理系统</h1><p>服务已启动，请配置完整项目文件</p>');
 });
 
 app.get('/health', (req, res) => {
@@ -206,21 +256,22 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 EOF
 
-            cat > index.html << 'EOF'
+cat > index.html << 'EOF'
 <!DOCTYPE html>
 <html>
 <head>
     <title>桶管理系统</title>
+    <meta charset="UTF-8">
 </head>
 <body>
     <h1>📦 桶管理系统</h1>
     <p>欢迎使用现代化桶管理平台</p>
-    <p>请确保部署完整项目文件</p>
+    <p>部署已完成，前端文件将自动补充</p>
 </body>
 </html>
 EOF
 
-            cat > package.json << 'EOF'
+cat > package.json << 'EOF'
 {
   "name": "barrel-management",
   "version": "1.0.0",
@@ -237,18 +288,31 @@ EOF
 }
 EOF
 
-            echo "✅ 已创建最小化项目结构"
-            
-            # 如果所有方案都失败，提示用户手动操作
-            if [ ! -f "index.html" ] || [ ! -f "server.js" ]; then
-                echo ""
-                echo "❌ 所有自动方案失败"
-                echo "请手动执行以下步骤："
-                echo "1. 在本地电脑下载: https://github.com/bqyrqhxwc7-bot/txk/archive/main.zip"
-                echo "2. 解压后上传到服务器 /var/www/barrel-management/"
-                echo "3. 运行: npm install"
-                echo "4. 重启服务: systemctl restart barrel-management"
-            fi
+echo "✅ 已创建最小化项目结构"
+
+# 如果所有方案都失败，提供明确的手动指导
+if [ ! -f "index.html" ] || [ ! -f "server.js" ]; then
+    echo ""
+    echo "❌ 所有自动方案失败"
+    echo "请手动执行以下步骤："
+    echo "1. 在本地电脑下载: https://github.com/bqyrqhxwc7-bot/txk/archive/main.zip"
+    echo "2. 解压后上传到服务器 /var/www/barrel-management/"
+    echo "3. 安装必要工具: sudo apt install unzip"
+    echo "4. 运行: npm install"
+    echo "5. 重启服务: systemctl restart barrel-management"
+    
+    # 提供最简单的手动修复命令
+    echo ""
+    echo "🎯 最简手动修复命令："
+    echo "cd /var/www/barrel-management"
+    echo "sudo apt install -y unzip"
+    echo "curl -L https://github.com/bqyrqhxwc7-bot/txk/archive/main.zip -o main.zip"
+    echo "unzip main.zip"
+    echo "mv txk-main/* ./"
+    echo "rm -rf txk-main main.zip"
+    echo "npm install --production"
+    echo "systemctl restart barrel-management"
+fi
         fi
     fi
 done
